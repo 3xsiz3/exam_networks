@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cisco Exam Config Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --bg2: #0f1520;
+    --bg3: #151d2e;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b35;
+    --text: #e2e8f0;
+    --text2: #7a8fa6;
+    --text3: #4a5c70;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 48px;
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+  }
+
+  .header-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .header-sub {
+    font-size: 14px;
+    color: var(--text2);
+    font-weight: 300;
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Panel */
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: sticky;
+    top: 24px;
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .field {
+    margin-bottom: 14px;
+  }
+
+  label {
+    display: block;
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 5px;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+  }
+
+  input, select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.1);
+  }
+
+  select option { background: var(--bg3); }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 18px 0;
+  }
+
+  .generate-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .generate-btn:hover {
+    background: #33ddff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0,212,255,0.3);
+  }
+
+  /* Output area */
+  .output-area { min-height: 200px; }
+
+  .welcome {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 48px;
+    text-align: center;
+    color: var(--text3);
+  }
+
+  .welcome-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .welcome p { font-size: 14px; line-height: 1.6; }
+
+  /* Tabs */
+  .tabs-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .tabs-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 12px 12px 0;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    padding: 7px 14px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px 6px 0 0;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    margin-bottom: -1px;
+  }
+
+  .tab-btn:hover { color: var(--text); background: var(--bg2); }
+
+  .tab-btn.active {
+    color: var(--accent);
+    background: var(--bg2);
+    border-color: var(--border);
+    border-bottom-color: var(--bg2);
+  }
+
+  .tab-content { display: none; padding: 20px; }
+  .tab-content.active { display: block; }
+
+  .copy-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .device-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 0.1em;
+  }
+
+  .copy-btn {
+    padding: 5px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .copy-btn.copied {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  pre {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-x: auto;
+  }
+
+  /* Syntax highlight */
+  .kw { color: var(--accent); }
+  .cm { color: var(--text3); font-style: italic; }
+  .ip { color: var(--accent2); }
+  .nm { color: var(--accent3); }
+
+  /* Address table */
+  .addr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .addr-table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--accent);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .addr-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+    color: var(--text);
+  }
+
+  .addr-table tr:last-child td { border-bottom: none; }
+  .addr-table td:first-child { color: var(--accent2); }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+  }
+
+  .badge-lacp { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+  .badge-static { background: rgba(255,107,53,0.1); color: var(--accent3); border: 1px solid rgba(255,107,53,0.2); }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .panel { position: static; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-tag">// Cisco Packet Tracer</div>
+    <h1>Config <span>Generator</span></h1>
+    <p class="header-sub">Генератор конфигов для экзаменационных вариантов</p>
+  </header>
+
+  <div class="layout">
+    <!-- Input panel -->
+    <div class="panel">
+      <div class="panel-title">Параметры варианта</div>
+
+      <div class="field">
+        <label>Фамилия (для имён VLAN)</label>
+        <input id="surname" value="Fateev" placeholder="Fateev">
+      </div>
+
+      <div class="divider"></div>
+      <div class="panel-title">VLAN</div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>VLAN PC (id)</label>
+          <input id="vlan_pc" value="29" placeholder="29">
+        </div>
+        <div class="field">
+          <label>VLAN Laptop (id)</label>
+          <input id="vlan_lt" value="129" placeholder="129">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="panel-title">IP сети</div>
+
+      <div class="field">
+        <label>Сеть PC (/24)</label>
+        <input id="net_pc" value="10.126.5.0" placeholder="10.126.5.0">
+      </div>
+      <div class="field">
+        <label>Сеть Laptop (/24)</label>
+        <input id="net_lt" value="10.126.6.0" placeholder="10.126.6.0">
+      </div>
+      <div class="field">
+        <label>Служебная сеть (/24)</label>
+        <input id="net_svc" value="10.126.7.0" placeholder="10.126.7.0">
+      </div>
+      <div class="field">
+        <label>Сеть Server (/28)</label>
+        <input id="net_srv" value="10.126.8.0" placeholder="10.126.8.0">
+      </div>
+      <div class="field">
+        <label>Сеть Remote_PC (/28)</label>
+        <input id="net_rpc" value="10.126.8.16" placeholder="10.126.8.16">
+      </div>
+
+      <div class="divider"></div>
+      <div class="panel-title">Прочее</div>
+
+      <div class="field">
+        <label>EIGRP AS номер</label>
+        <input id="eigrp_as" value="29" placeholder="29">
+      </div>
+      <div class="field">
+        <label>EtherChannel тип</label>
+        <select id="etherchannel">
+          <option value="lacp">LACP (active)</option>
+          <option value="static">Статический (on)</option>
+        </select>
+      </div>
+
+      <button class="generate-btn" onclick="generate()">▶ Генерировать</button>
+    </div>
+
+    <!-- Output -->
+    <div class="output-area" id="output">
+      <div class="welcome">
+        <div class="welcome-icon">⚙</div>
+        <p>Заполни параметры слева<br>и нажми <strong>Генерировать</strong></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function ip(base, offset) {
+  const p = base.split('.').map(Number);
+  p[3] += offset;
+  return p.join('.');
+}
+
+function highlight(code) {
+  return code
+    .replace(/^(! .*)$/gm, '<span class="cm">$1</span>')
+    .replace(/\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/g, '<span class="ip">$1</span>')
+    .replace(/\b(en|conf t|hostname|interface|ip address|no shutdown|shutdown|vlan|name|switchport|spanning-tree|standby|router eigrp|network|no auto-summary|ip routing|channel-group|port-channel|tunnel|end|write memory|ip domain-name|username|crypto|line vty|login local|transport input|ip ssh version|ip route|no switchport|no ip address|exit)\b/g, '<span class="kw">$1</span>');
+}
+
+function makeBlock(device, code) {
+  const id = device.replace(/[^a-zA-Z0-9]/g, '_');
+  return `
+    <div class="tab-content" id="tc_${id}">
+      <div class="copy-bar">
+        <span class="device-label">${device}</span>
+        <button class="copy-btn" onclick="copyCode('${id}')">копировать</button>
+      </div>
+      <pre id="pre_${id}">${code}</pre>
+    </div>`;
+}
+
+function copyCode(id) {
+  const pre = document.getElementById('pre_' + id);
+  const text = pre.innerText || pre.textContent;
+  navigator.clipboard.writeText(text);
+  const btn = pre.parentElement.querySelector('.copy-btn');
+  btn.textContent = '✓ скопировано';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = 'копировать'; btn.classList.remove('copied'); }, 1500);
+}
+
+function showTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`[data-tab="${id}"]`).classList.add('active');
+  document.getElementById('tc_' + id).classList.add('active');
+}
+
+function generate() {
+  const surname = document.getElementById('surname').value.trim() || 'Fateev';
+  const vpc = document.getElementById('vlan_pc').value.trim();
+  const vlt = document.getElementById('vlan_lt').value.trim();
+  const net_pc = document.getElementById('net_pc').value.trim();
+  const net_lt = document.getElementById('net_lt').value.trim();
+  const net_svc = document.getElementById('net_svc').value.trim();
+  const net_srv = document.getElementById('net_srv').value.trim();
+  const net_rpc = document.getElementById('net_rpc').value.trim();
+  const as = document.getElementById('eigrp_as').value.trim();
+  const etype = document.getElementById('etherchannel').value;
+  const ecMode = etype === 'lacp' ? 'active' : 'on';
+
+  const configs = {
+    'MLSw0': `en
+conf t
+hostname MLSw0
+
+vlan ${vpc}
+ name ${surname}_PC
+vlan ${vlt}
+ name ${surname}_LT
+
+! EtherChannel ${etype === 'lacp' ? 'LACP' : 'статический'} → MLSw1
+int range fa0/1-2
+ shutdown
+ channel-group 1 mode ${ecMode}
+ no shutdown
+int port-channel 1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+
+! Транки к Sw0 и Sw1
+int g0/2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+
+! L3 линк к Router0
+int g0/1
+ no switchport
+ ip address ${ip(net_svc,2)} 255.255.255.252
+ no shutdown
+
+ip routing
+
+! SVI
+int vlan ${vpc}
+ ip address ${ip(net_pc,1)} 255.255.255.0
+ no shutdown
+int vlan ${vlt}
+ ip address ${ip(net_lt,1)} 255.255.255.0
+ no shutdown
+
+! PVST — MLSw0 root для VLAN ${vpc}
+spanning-tree vlan ${vpc} root primary
+spanning-tree vlan ${vlt} root secondary
+
+! HSRP
+int vlan ${vpc}
+ standby 1 ip ${ip(net_pc,254)}
+ standby 1 priority 110
+ standby 1 preempt
+int vlan ${vlt}
+ standby 2 ip ${ip(net_lt,254)}
+ standby 2 priority 90
+ standby 2 preempt
+
+! EIGRP
+router eigrp ${as}
+ no auto-summary
+ network ${net_pc} 0.0.0.255
+ network ${net_lt} 0.0.0.255
+ network ${net_svc} 0.0.0.3
+
+! SSH
+ip domain-name corp.local
+username admin privilege 15 secret cisco
+crypto key generate rsa
+1024
+ip ssh version 2
+line vty 0 4
+ login local
+ transport input ssh
+
+end
+write memory`,
+
+    'MLSw1': `en
+conf t
+hostname MLSw1
+
+vlan ${vpc}
+ name ${surname}_PC
+vlan ${vlt}
+ name ${surname}_LT
+
+! EtherChannel ${etype === 'lacp' ? 'LACP' : 'статический'} → MLSw0
+int range fa0/1-2
+ shutdown
+ channel-group 1 mode ${ecMode}
+ no shutdown
+int port-channel 1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+
+! Транки к Sw0 и Sw1
+int g0/2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+
+! L3 линк к Router0
+int g0/1
+ no switchport
+ ip address ${ip(net_svc,6)} 255.255.255.252
+ no shutdown
+
+ip routing
+
+! SVI
+int vlan ${vpc}
+ ip address ${ip(net_pc,2)} 255.255.255.0
+ no shutdown
+int vlan ${vlt}
+ ip address ${ip(net_lt,2)} 255.255.255.0
+ no shutdown
+
+! PVST — MLSw1 root для VLAN ${vlt}
+spanning-tree vlan ${vlt} root primary
+spanning-tree vlan ${vpc} root secondary
+
+! HSRP
+int vlan ${vpc}
+ standby 1 ip ${ip(net_pc,254)}
+ standby 1 priority 90
+ standby 1 preempt
+int vlan ${vlt}
+ standby 2 ip ${ip(net_lt,254)}
+ standby 2 priority 110
+ standby 2 preempt
+
+! EIGRP
+router eigrp ${as}
+ no auto-summary
+ network ${net_pc} 0.0.0.255
+ network ${net_lt} 0.0.0.255
+ network ${ip(net_svc,4)} 0.0.0.3
+
+! SSH
+ip domain-name corp.local
+username admin privilege 15 secret cisco
+crypto key generate rsa
+1024
+ip ssh version 2
+line vty 0 4
+ login local
+ transport input ssh
+
+end
+write memory`,
+
+    'Sw0': `en
+conf t
+hostname Sw0
+
+vlan ${vpc}
+ name ${surname}_PC
+vlan ${vlt}
+ name ${surname}_LT
+
+! Транки к MLSw0 и MLSw1
+int fa0/1
+ switchport mode trunk
+int fa0/2
+ switchport mode trunk
+
+! PC0 → VLAN ${vpc}
+int fa0/24
+ switchport mode access
+ switchport access vlan ${vpc}
+ spanning-tree portfast
+ switchport port-security
+ switchport port-security violation shutdown
+
+! Laptop0 → VLAN ${vlt}
+int fa0/23
+ switchport mode access
+ switchport access vlan ${vlt}
+ spanning-tree portfast
+ switchport port-security
+ switchport port-security violation shutdown
+
+ip default-gateway ${ip(net_pc,254)}
+
+! SSH
+ip domain-name corp.local
+username admin privilege 15 secret cisco
+crypto key generate rsa
+1024
+ip ssh version 2
+line vty 0 4
+ login local
+ transport input ssh
+
+end
+write memory`,
+
+    'Sw1': `en
+conf t
+hostname Sw1
+
+vlan ${vpc}
+ name ${surname}_PC
+vlan ${vlt}
+ name ${surname}_LT
+
+! Транки к MLSw0 и MLSw1
+int fa0/1
+ switchport mode trunk
+int fa0/2
+ switchport mode trunk
+
+! PC1 → VLAN ${vpc}
+int fa0/24
+ switchport mode access
+ switchport access vlan ${vpc}
+ spanning-tree portfast
+ switchport port-security
+ switchport port-security violation shutdown
+
+! Laptop1/AP → VLAN ${vlt}
+int fa0/23
+ switchport mode access
+ switchport access vlan ${vlt}
+ spanning-tree portfast
+ switchport port-security
+ switchport port-security violation shutdown
+
+ip default-gateway ${ip(net_lt,254)}
+
+! SSH
+ip domain-name corp.local
+username admin privilege 15 secret cisco
+crypto key generate rsa
+1024
+ip ssh version 2
+line vty 0 4
+ login local
+ transport input ssh
+
+end
+write memory`,
+
+    'Router0': `en
+conf t
+hostname Router0
+
+! К MLSw0
+int g0/0
+ ip address ${ip(net_svc,1)} 255.255.255.252
+ no shutdown
+
+! К MLSw1
+int g0/1
+ ip address ${ip(net_svc,5)} 255.255.255.252
+ no shutdown
+
+! Serial к ISP
+int serial 0/0/0
+ ip address 1.0.0.2 255.255.255.252
+ no shutdown
+
+! Маршрут до Router1 через ISP
+ip route 2.0.0.0 255.255.255.252 serial 0/0/0
+
+! GRE туннель
+int tunnel 0
+ ip address ${ip(net_svc,9)} 255.255.255.252
+ tunnel mode gre ip
+ tunnel source serial 0/0/0
+ tunnel destination 2.0.0.2
+ no shutdown
+
+! EIGRP
+router eigrp ${as}
+ no auto-summary
+ network ${net_svc} 0.0.0.3
+ network ${ip(net_svc,4)} 0.0.0.3
+ network ${ip(net_svc,8)} 0.0.0.3
+
+! SSH
+ip domain-name corp.local
+username admin privilege 15 secret cisco
+crypto key generate rsa
+1024
+ip ssh version 2
+line vty 0 4
+ login local
+ transport input ssh
+
+end
+write memory`,
+
+    'Router1': `en
+conf t
+hostname Router1
+
+! Serial к ISP
+int serial 0/0/0
+ ip address 2.0.0.2 255.255.255.252
+ no shutdown
+
+! К Server
+int g0/1
+ ip address ${ip(net_srv,1)} 255.255.255.240
+ no shutdown
+
+! К Remote_PC
+int g0/2
+ ip address ${ip(net_rpc,1)} 255.255.255.240
+ no shutdown
+
+! Маршрут до Router0 через ISP
+ip route 1.0.0.0 255.255.255.252 serial 0/0/0
+
+! GRE туннель
+int tunnel 0
+ ip address ${ip(net_svc,10)} 255.255.255.252
+ tunnel mode gre ip
+ tunnel source serial 0/0/0
+ tunnel destination 1.0.0.2
+ no shutdown
+
+! EIGRP
+router eigrp ${as}
+ no auto-summary
+ network ${net_srv} 0.0.0.15
+ network ${net_rpc} 0.0.0.15
+ network ${ip(net_svc,8)} 0.0.0.3
+
+! SSH
+ip domain-name corp.local
+username admin privilege 15 secret cisco
+crypto key generate rsa
+1024
+ip ssh version 2
+line vty 0 4
+ login local
+ transport input ssh
+
+end
+write memory`
+  };
+
+  const devices = {
+    'PC0': { ip: ip(net_pc,10), mask:'255.255.255.0', gw: ip(net_pc,254), dns: ip(net_srv,2) },
+    'PC1': { ip: ip(net_pc,11), mask:'255.255.255.0', gw: ip(net_pc,254), dns: ip(net_srv,2) },
+    'Laptop0': { ip: ip(net_lt,10), mask:'255.255.255.0', gw: ip(net_lt,254), dns: ip(net_srv,2) },
+    'Laptop1': { ip: ip(net_lt,11), mask:'255.255.255.0', gw: ip(net_lt,254), dns: ip(net_srv,2) },
+    'Server': { ip: ip(net_srv,2), mask:'255.255.255.240', gw: ip(net_srv,1), dns: '127.0.0.1' },
+    'Remote_PC': { ip: ip(net_rpc,2), mask:'255.255.255.240', gw: ip(net_rpc,1), dns: ip(net_srv,2) },
+  };
+
+  const tabKeys = Object.keys(configs);
+  const tabIds = tabKeys.map(k => k.replace(/[^a-zA-Z0-9]/g, '_'));
+
+  let tabsHtml = tabKeys.map((k,i) =>
+    `<button class="tab-btn${i===0?' active':''}" data-tab="${tabIds[i]}" onclick="showTab('${tabIds[i]}')">${k}</button>`
+  ).join('');
+  tabsHtml += `<button class="tab-btn" data-tab="addresses" onclick="showTab('addresses')">Адреса</button>`;
+
+  let contentsHtml = tabKeys.map((k,i) =>
+    `<div class="tab-content${i===0?' active':''}" id="tc_${tabIds[i]}">
+      <div class="copy-bar">
+        <span class="device-label">${k} <span class="badge badge-${etype === 'lacp' && (k==='MLSw0'||k==='MLSw1') ? 'lacp' : 'static'}">${k.startsWith('MLSw') ? (etype==='lacp'?'LACP':'STATIC') : k.startsWith('Router') ? 'EIGRP '+as : 'L2'}</span></span>
+        <button class="copy-btn" onclick="copyCode('${tabIds[i]}')">копировать</button>
+      </div>
+      <pre id="pre_${tabIds[i]}">${configs[k]}</pre>
+    </div>`
+  ).join('');
+
+  // Address table
+  let addrRows = Object.entries(devices).map(([name, d]) =>
+    `<tr><td>${name}</td><td>${d.ip}</td><td>${d.mask}</td><td>${d.gw}</td><td>${d.dns}</td></tr>`
+  ).join('');
+
+  contentsHtml += `
+    <div class="tab-content" id="tc_addresses">
+      <table class="addr-table">
+        <thead><tr><th>Устройство</th><th>IP</th><th>Маска</th><th>Gateway</th><th>DNS</th></tr></thead>
+        <tbody>${addrRows}</tbody>
+      </table>
+      <div style="margin-top:16px;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:12px;color:var(--text2);line-height:1.8;">
+        <span style="color:var(--accent)">Server → Services → DNS:</span> добавить запись <span style="color:var(--accent2)">server.com → ${ip(net_srv,2)}</span><br>
+        <span style="color:var(--accent)">Server → Services → HTTP:</span> Edit index.html → ФИО, группа, дата
+      </div>
+    </div>`;
+
+  document.getElementById('output').innerHTML = `
+    <div class="tabs-wrap">
+      <div class="tabs-header">${tabsHtml}</div>
+      ${contentsHtml}
+    </div>`;
+}
+
+// Generate on Enter
+document.addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
+</script>
+</body>
+</html>
