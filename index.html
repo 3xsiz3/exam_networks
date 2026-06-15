@@ -423,6 +423,7 @@
         <select id="etherchannel">
           <option value="lacp">LACP (active)</option>
           <option value="static">Статический (on)</option>
+          <option value="pagp">PAgP (desirable)</option>
         </select>
       </div>
 
@@ -493,7 +494,10 @@ function generate() {
   const net_rpc = document.getElementById('net_rpc').value.trim();
   const as = document.getElementById('eigrp_as').value.trim();
   const etype = document.getElementById('etherchannel').value;
-  const ecMode = etype === 'lacp' ? 'active' : 'on';
+  const ecModeMap = { lacp: 'active', static: 'on', pagp: 'desirable' };
+  const ecMode = ecModeMap[etype];
+  const ecNameMap = { lacp: 'LACP', static: 'статический', pagp: 'PAgP' };
+  const sshUser = surname.toLowerCase();
 
   const configs = {
     'MLSw0': `en
@@ -505,7 +509,7 @@ vlan ${vpc}
 vlan ${vlt}
  name ${surname}_LT
 
-! EtherChannel ${etype === 'lacp' ? 'LACP' : 'статический'} → MLSw1
+! EtherChannel ${ecNameMap[etype]} → MLSw1
 int range fa0/1-2
  shutdown
  channel-group 1 mode ${ecMode}
@@ -558,7 +562,7 @@ router eigrp ${as}
 
 ! SSH
 ip domain-name corp.local
-username admin privilege 15 secret cisco
+username ${sshUser} secret cisco
 crypto key generate rsa
 1024
 ip ssh version 2
@@ -578,7 +582,7 @@ vlan ${vpc}
 vlan ${vlt}
  name ${surname}_LT
 
-! EtherChannel ${etype === 'lacp' ? 'LACP' : 'статический'} → MLSw0
+! EtherChannel ${ecNameMap[etype]} → MLSw0
 int range fa0/1-2
  shutdown
  channel-group 1 mode ${ecMode}
@@ -631,7 +635,7 @@ router eigrp ${as}
 
 ! SSH
 ip domain-name corp.local
-username admin privilege 15 secret cisco
+username ${sshUser} secret cisco
 crypto key generate rsa
 1024
 ip ssh version 2
@@ -663,6 +667,8 @@ int fa0/24
  switchport access vlan ${vpc}
  spanning-tree portfast
  switchport port-security
+ switchport port-security mac-address sticky
+ switchport port-security maximum 1
  switchport port-security violation shutdown
 
 ! Laptop0 → VLAN ${vlt}
@@ -671,13 +677,15 @@ int fa0/23
  switchport access vlan ${vlt}
  spanning-tree portfast
  switchport port-security
+ switchport port-security mac-address sticky
+ switchport port-security maximum 1
  switchport port-security violation shutdown
 
 ip default-gateway ${ip(net_pc,254)}
 
 ! SSH
 ip domain-name corp.local
-username admin privilege 15 secret cisco
+username ${sshUser} secret cisco
 crypto key generate rsa
 1024
 ip ssh version 2
@@ -709,6 +717,8 @@ int fa0/24
  switchport access vlan ${vpc}
  spanning-tree portfast
  switchport port-security
+ switchport port-security mac-address sticky
+ switchport port-security maximum 1
  switchport port-security violation shutdown
 
 ! Laptop1/AP → VLAN ${vlt}
@@ -717,13 +727,15 @@ int fa0/23
  switchport access vlan ${vlt}
  spanning-tree portfast
  switchport port-security
+ switchport port-security mac-address sticky
+ switchport port-security maximum 1
  switchport port-security violation shutdown
 
 ip default-gateway ${ip(net_lt,254)}
 
 ! SSH
 ip domain-name corp.local
-username admin privilege 15 secret cisco
+username ${sshUser} secret cisco
 crypto key generate rsa
 1024
 ip ssh version 2
@@ -773,7 +785,7 @@ router eigrp ${as}
 
 ! SSH
 ip domain-name corp.local
-username admin privilege 15 secret cisco
+username ${sshUser} secret cisco
 crypto key generate rsa
 1024
 ip ssh version 2
@@ -823,7 +835,7 @@ router eigrp ${as}
 
 ! SSH
 ip domain-name corp.local
-username admin privilege 15 secret cisco
+username ${sshUser} secret cisco
 crypto key generate rsa
 1024
 ip ssh version 2
@@ -855,7 +867,7 @@ write memory`
   let contentsHtml = tabKeys.map((k,i) =>
     `<div class="tab-content${i===0?' active':''}" id="tc_${tabIds[i]}">
       <div class="copy-bar">
-        <span class="device-label">${k} <span class="badge badge-${etype === 'lacp' && (k==='MLSw0'||k==='MLSw1') ? 'lacp' : 'static'}">${k.startsWith('MLSw') ? (etype==='lacp'?'LACP':'STATIC') : k.startsWith('Router') ? 'EIGRP '+as : 'L2'}</span></span>
+        <span class="device-label">${k} <span class="badge badge-${(k==='MLSw0'||k==='MLSw1') ? (etype === 'lacp' ? 'lacp' : 'static') : 'static'}">${k.startsWith('MLSw') ? ecNameMap[etype].toUpperCase() : k.startsWith('Router') ? 'EIGRP '+as : 'L2'}</span></span>
         <button class="copy-btn" onclick="copyCode('${tabIds[i]}')">копировать</button>
       </div>
       <pre id="pre_${tabIds[i]}">${configs[k]}</pre>
